@@ -6,7 +6,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import List
 from dotenv import load_dotenv
-from agents import Agent, Runner, trace
+from agents import Agent, Runner, trace, OpenAIChatCompletionsModel
+from openai import AsyncOpenAI
 
 from context import SECURITY_RESEARCHER_INSTRUCTIONS, get_analysis_prompt, enhance_summary
 from mcp_servers import create_semgrep_server
@@ -72,13 +73,16 @@ def check_api_keys() -> None:
 
 def create_security_agent(semgrep_server) -> Agent:
     """Create and configure the security analysis agent."""
-    return Agent(
+    client = AsyncOpenAI(base_url = "https://openrouter.ai/api/v1", api_key=os.getenv("OPENROUTER_API_KEY"))
+    custom_model = OpenAIChatCompletionsModel(openai_client=client, model="openai/gpt-oss-120b:free")
+    agent = Agent(
         name="Security Researcher",
         instructions=SECURITY_RESEARCHER_INSTRUCTIONS,
-        model="gpt-4.1-mini",
+        model=custom_model,
         mcp_servers=[semgrep_server],
         output_type=SecurityReport,
     )
+    return agent
 
 
 async def run_security_analysis(code: str) -> SecurityReport:
@@ -99,7 +103,6 @@ async def run_security_analysis(code: str) -> SecurityReport:
                     # Changed the following two lines to sort by CVSS in descending order
                     sorted_report = result.final_output_as(SecurityReport)
                     sorted_report.issues.sort(key=lambda issue: issue.cvss_score, reverse=True)
-
                     return sorted_report
                 finally:
                     try:
