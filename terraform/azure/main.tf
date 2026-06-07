@@ -179,7 +179,6 @@ resource "azurerm_container_app" "main" {
     environment = terraform.workspace
     project     = var.project_name
   }
-
 }
 
 # Outputs
