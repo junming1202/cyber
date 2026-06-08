@@ -15,6 +15,13 @@ variable "service_name" {
   default     = "cyber-analyzer"
 }
 
+variable "openrouter_api_key" {
+  description = "Open Router API key for the application"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "openai_api_key" {
   description = "OpenAI API key for the application"
   type        = string
